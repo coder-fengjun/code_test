@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas视频录制</title>
+</head>
+<style>
+    /* styles.css */
+
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f2f2f2;
+    }
+
+    h1 {
+        margin: 0;
+    }
+
+    main {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .buttons {
+        margin-bottom: 20px;
+    }
+
+    button {
+        padding: 10px 20px;
+        margin-right: 10px;
+        background-color: #333;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .background-div {
+        margin-bottom: 20px;
+    }
+
+    .background-btn {
+        padding: 10px 20px;
+        background-color: #333;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .content {
+        width: 80%;
+        background-color: #f9f9f9;
+        padding: 20px;
+    }
+
+    h2 {
+        margin-top: 0;
+    }
+
+    #todo-form {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 10px;
+        gap: 10px;
+    }
+
+    .input-field {
+        padding: 10px;
+        flex: 1;
+    }
+
+    .submit-btn {
+        padding: 10px 20px;
+        background-color: #333;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .list {
+        height: 400px;
+    }
+
+    .item {
+        height: 40px;
+        border-radius: 4px;
+        line-height: 40px;
+        padding: 8px;
+        margin-bottom: 8px;
+        background-color: #EEE;
+    }
+
+    .item:hover {
+        background-color: #CCC;
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
+
+<body>
+    <main>
+        <div class="buttons">
+            <button class="start-btn">开始录制</button>
+            <button class="pause-btn">暂停录制</button>
+            <button class="resume-btn">继续录制</button>
+            <button class="stop-btn">结束录制</button>
+        </div>
+        <div id="box">
+            <section class="content">
+                <h2>TODO LIST</h2>
+                <div class="background-div">
+                    <button class="background-btn">切换背景颜色</button>
+                </div>
+                <div id="todo-form">
+                    <input type="text" class="input-field" placeholder="输入待办事项">
+                    <button type="submit" class="submit-btn">提交</button>
+                </div>
+                <div class="list"></div>
+            </section>
+        </div>
+        <img src="" alt="" class="hidden">
+    </main>
+
+    <script src="https://cdn.bootcss.com/html2canvas/0.5.0-beta4/html2canvas.min.js" defer></script>
+    <script>
+        let col = 0;
+        const colors = ['#ff708d', '#598bff', '#42aaff', '#ffc94d', '#2ce69b'];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.background-btn').addEventListener('click', () => {
+                document.querySelector('.content').style.background = colors[col];
+                col = (col + 1) % colors.length;
+                canvasFunction();
+            });
+
+            document.querySelector(".input-field").addEventListener("input", (event) => {
+                canvasFunction();
+            });
+
+            document.querySelector('.submit-btn').addEventListener('click', () => {
+                const text = document.querySelector('.input-field').value;
+                document.querySelector('.input-field').value = '';
+                const div = document.createElement('div');
+                div.setAttribute('class', 'item');
+                div.innerText = text;
+                document.querySelector('.list').appendChild(div);
+                canvasFunction();
+            });
+
+            const box = document.getElementById('box');
+            const boxBoundingClientRect = box.getBoundingClientRect();
+            const w = boxBoundingClientRect.width;
+            const h = boxBoundingClientRect.height;
+            const canvas = document.createElement('canvas');
+            canvas.setAttribute('id', 'canvas');
+            canvas.setAttribute('width', w);
+            canvas.setAttribute('height', h);
+            canvas.style.display = 'none';
+            box.appendChild(canvas);
+
+            const img = document.querySelector('img');
+            const ctx = canvas.getContext("2d");
+            const allChunks = [];
+            const stream = canvas.captureStream(60); // 60 FPS recording   1秒60帧
+
+            const recorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp9'
+            });
+            recorder.ondataavailable = (e) => {
+                allChunks.push(e.data);
+            };
+
+            // 开始
+            document.querySelector('.start-btn').addEventListener('click', () => {
+                if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+                    canvasFunction();
+                    console.log("开始");
+                    recorder.start(10);
+                }
+            });
+
+            // 暂停
+            document.querySelector('.pause-btn').addEventListener('click', () => {
+                console.log("暂停");
+                recorder.pause();
+            });
+
+            // 继续
+            document.querySelector('.resume-btn').addEventListener('click', () => {
+                console.log("继续");
+                recorder.resume();
+            });
+
+            // 结束
+            document.querySelector('.stop-btn').addEventListener('click', () => {
+                console.log("结束录制");
+                canvasFunction();
+                setTimeout(() => {
+                    console.log("保存");
+                    recorder.stop();
+                    const fullBlob = new Blob(allChunks);
+                    const videoUrl = window.URL.createObjectURL(fullBlob);
+
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.src = videoUrl;
+                    video.muted = true;
+                    video.autoplay = true;
+                    document.body.appendChild(video);
+                }, 1000);
+            });
+
+            const canvasFunction = () => {
+                html2canvas(box).then(canvas => {
+                    const imgStr = canvas.toDataURL("image/png");
+                    img.src = imgStr;
+                    img.onload = function () {
+                        ctx.drawImage(img, 0, 0, w, h);
+                    }
+                });
+            }
+        });
+
+    </script>
+</body>
+
+</html>

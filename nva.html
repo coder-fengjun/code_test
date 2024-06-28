@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>底部导航栏</title>
+</head>
+<style>
+    /* 清除一些默认样式 */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        list-style: none;
+    }
+
+    a {
+        text-decoration: none;
+        /*确保在浏览器中显示链接时，没有任何文本装饰，如下划线。 */
+    }
+
+    /* 对整体进行设置，并且都设置为弹性盒，方便进行操作 */
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: #222327;
+    }
+
+    /* 设置导航栏样式 */
+    .nav {
+        /* 对导航栏位置进行定位处理，方便后续的图标位置的设置 */
+        position: relative;
+        width: 400px;
+        height: 60px;
+        background: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 10px;
+    }
+
+    .nav ul {
+        display: flex;
+        width: 350px;
+    }
+
+    .nav ul li {
+        height: 60px;
+        /* flex:1是让所有的li平均分nav这个容器 */
+        flex: 1;
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+    }
+
+    .nav ul li span {
+        /* 进行定位，使之通过span元素带动矢量图标进行水平垂直到中心位置 */
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        font-size: 9px;
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        /* 设置鼠标移入的样式 */
+        cursor: pointer;
+        /* 设置动画过度事件以及延迟 */
+        transition: 0.5s;
+        transition-delay: 0s;
+    }
+
+    .nav ul li span i {
+        /* 针对图标大小进行设置 */
+        display: flex;
+        color: #222327;
+        font-size: 2em;
+    }
+
+    /* 下面是针对选中效果做的样式处理 */
+    .nav ul li.active span {
+        /* 设置了一开始的背景颜色，后面会被取代，设置了点击的时候会向上移动 */
+        background: orange;
+        transform: translateY(-27px);
+        transition-delay: 0.25s;
+    }
+
+    .nav ul li.active span i {
+        /* 设置了点击时候矢量图标的文字颜色 */
+        color: #fff;
+    }
+
+    .nav ul li span::before {
+        content: '';
+        position: absolute;
+        top: 10px;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: orange;
+        border-radius: 50%;
+        filter: blur(40px);
+        opacity: 0;
+        transition: 0.5s;
+        transition-delay: 0s;
+    }
+
+    .nav ul li span::before {
+        opacity: 0.5;
+        transition-delay: 0.25s;
+    }
+
+    /* 这里将i元素设置的颜色显示出来 这两个样式块中都使用了 background: var(--clr); 属性，可以将背景颜色设置为
+     --clr 变量所表示的值。这种使用自定义变量的方式，可以在代码中统一定义颜色值，以便在需要时进行统一更改。*/
+    .nav ul li.active span {
+        background: var(--clr);
+    }
+
+    .nav ul li span::before {
+        background: var(--clr);
+    }
+
+    /* 背景园设置 */
+    .indicator {
+        /* 这里进行了定位，并且设置了背景园的位置，同时将圆的背景颜色与背景颜色设为一致，会形成那种向下突兀的圆形，并且加入了动画 */
+        position: absolute;
+        top: -35px;
+        width: 70.5px;
+        height: 70px;
+        background: #222327;
+        border-radius: 50%;
+        z-index: 1;
+        transition: 0.5s;
+    }
+
+    /* 设置左边半弧 */
+    .indicator::before {
+        content: '';
+        position: absolute;
+        top: 16px;
+        left: -34px;
+        width: 10px;
+        height: 5px;
+        background: transparent;
+        border-radius: 50%;
+        box-shadow: 20.5px 19px 0 4px #fff;
+    }
+
+    /* 设置右边半弧 */
+    .indicator::after {
+        content: '';
+        position: absolute;
+        top: 16px;
+        left: 54px;
+        width: 10px;
+        height: 5px;
+        background: transparent;
+        border-radius: 50%;
+        box-shadow: 20px 19px 0 4px #fff;
+    }
+
+    /* 设置平移 */
+    /* nth-child()选中低某个i元素，然后配合js完成背景圆的移动 
+    在CSS中，calc() 是一个用于执行计算的函数。它允许在CSS属性值中使用数学表达式。
+    这种计算函数通常用于允许动态计算和调整元素的尺寸、间距或位置。在 calc() 函数中，可以使用不同的运算符（如加号 +、减号 -、乘号 *、除号 /）来结合数值和单位进行计算。
+    它可以包含其他长度单位（如像素 px、百分比 % 等），并且可以与其他CSS属性值和变量一起使用。*/
+    /* 这里呢使用了nth-child选择器选中对应的i元素，注意，这里设置的平移效果是由clac函数计算而来，选中其中一个i元素，
+    并且当且仅当具有active类之后的所有兄弟中的.indicator类元素，有一个指示器元素（`.indicator`）。
+    指示器的位置会根据活动项目（具有`active`类的`<li>`元素）的位置进行调整根据活动项目的位置设置指示器的水平平移距离，
+    实现一个在导航菜单中显示当前选中项目的效果。指示器的位置和平移距离是根据活动项目的索引和固定的长度单位（70px）进行计算的。 */
+    .nav li:nth-child(1).active~.indicator {
+        transform: translateX(calc(70px*0));
+    }
+
+    .nav li:nth-child(2).active~.indicator {
+        transform: translateX(calc(70px*1));
+    }
+
+    .nav li:nth-child(3).active~.indicator {
+        transform: translateX(calc(70px*2));
+    }
+
+    .nav li:nth-child(4).active~.indicator {
+        transform: translateX(calc(70px*3));
+    }
+
+    .nav li:nth-child(5).active~.indicator {
+        transform: translateX(calc(70px*4));
+    }
+</style>
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_4173165_2g4t5a6pg9v.css">
+
+<body>
+    <!-- 目前就一个简单的nav，推荐大家语义化来写 -->
+    <div class="nav">
+        <ul>
+            <!-- 设置active效果，用于获取选中效果 行内样式是一种直接在HTML元素上指定样式的方法，在这种情况下，你使用 style 属性将 --clr 变量设为不同色。-->
+            <li class="active" style="--clr:#f44336"><span><i class="iconfont icon-shouye"></i>首页</span></li>
+            <li style="--clr:#0fc70f"> <span><i class="iconfont icon-liuyan"></i>留言</span></li>
+            <li style="--clr:#2196f3"> <span><i class="iconfont icon-code"></i>代码</span></li>
+            <li style="--clr:#b145e9"> <span><i class="iconfont icon-box-empty"></i>盒子</span></li>
+            <li style="--clr:#ffa111"> <span><i class="iconfont icon-gitee-fill-round"></i>gitee</span></li>
+            <div class="indicator"></div>
+        </ul>
+    </div>
+</body>
+<script>
+    //通过 `lis.forEach(li => li.addEventListener('click', function () {...}))` 遍历 `lis` 数组中的每个元素，并为每个元素都添加一个 ‘click’ 事件监听器。
+    //在每次点击事件中，使用 `lis.forEach(item => {...})` 遍历 `lis` 数组中的每个元素，将它们的 `active` 类都移除，然后在当前被点击的元素上添加 `active` 类，
+    const lis = document.querySelectorAll('.nav li')
+    lis.forEach(li => li.addEventListener('click', function () {
+        lis.forEach(item => {
+            item.classList.remove('active');
+            this.classList.add('active');
+        })
+    }))
+</script>
+
+</html>
