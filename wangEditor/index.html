@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://unpkg.com/@wangeditor/editor@latest/dist/css/style.css" rel="stylesheet">
+    <style>
+        #editor—wrapper {
+            border: 1px solid #ccc;
+            z-index: 100;
+            /* 按需定义 */
+        }
+
+        #toolbar-container {
+            border-bottom: 1px solid #ccc;
+        }
+
+        #editor-container {
+            height: 500px;
+        }
+
+        #header-container {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+
+        #header-container li {
+            color: #333;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        #header-container li:hover {
+            text-decoration: underline;
+        }
+
+        #header-container li[type="header1"] {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        #header-container li[type="header2"] {
+            font-size: 16px;
+            padding-left: 15px;
+            font-weight: bold;
+        }
+
+        #header-container li[type="header3"] {
+            font-size: 14px;
+            padding-left: 30px;
+        }
+
+        #header-container li[type="header4"] {
+            font-size: 12px;
+            padding-left: 45px;
+        }
+
+        #header-container li[type="header5"] {
+            font-size: 12px;
+            padding-left: 60px;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: flex">
+        <div id="editor—wrapper">
+            <div id="toolbar-container"><!-- 工具栏 --></div>
+            <div id="editor-container"><!-- 编辑器 --></div>
+        </div>
+        <div style="width: 200px; background-color: #f1f1f1;">
+            <ul id="header-container">
+            </ul>
+        </div>
+    </div>
+    <script src="https://unpkg.com/@wangeditor/editor@latest/dist/index.js"></script>
+    <script>
+        const { createEditor, createToolbar } = window.wangEditor
+        const E = window.wangEditor
+        // 标题 DOM 容器
+        const headerContainer = document.getElementById('header-container')
+        headerContainer.addEventListener('mousedown', event => {
+            if (event.target.tagName !== 'LI') return
+            event.preventDefault()
+            const id = event.target.id
+            editor.scrollToElem(id) // 滚动到标题
+        })
+        const editorConfig = {
+            placeholder: 'Type here...',
+            onChange(editor) {
+                const headers = editor.getElemsByTypePrefix('header')
+                headerContainer.innerHTML = headers.map(header => {
+                    const text = E.SlateNode.string(header)
+                    const { id, type } = header
+                    return `<li id="${id}" type="${type}">${text}</li>`
+                }).join('')
+            }
+        }
+        const editor = createEditor({
+            selector: '#editor-container',
+            html: '<p><br></p><p style="text-align: left;"><span style="color: rgb(127, 127, 127); background-color: rgb(255, 255, 255); font-family: 微软雅黑;">-----------------------------------------------------------------------------------</span></p><p><span style="font-family: 仿宋;">您投资理财的终身伴侣</span></p><p> </p><p style="text-align: left;"><span style="color: rgb(127, 127, 127); font-family: 宋体;">手机（Mob）：130 0000 0000 <br>邮箱（Mail）：moumoumou@jfcf.com <br>邮编（P.C.）：201702</span></p><p style="text-align: left;"><span style="color: rgb(127, 127, 127); font-family: 宋体;">Address：Yintech Financial Center, 88 Xumin East Road, Shanghai<br>地址：上海市银科金融中心（徐民东路88号）</span></p><p><br></p>',
+            config: editorConfig,
+            mode: 'default', // or 'simple'
+        })
+
+        const toolbarConfig = {}
+
+        const toolbar = createToolbar({
+            editor,
+            selector: '#toolbar-container',
+            config: toolbarConfig,
+            mode: 'default', // or 'simple'
+        })
+    </script>
+</body>
+
+</html>
