@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h2>上传文件并计算 MD5</h2>
+    <input type="file" id="fileInput" />
+    <p>MD5: <span id="md5Result"></span></p>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.0/spark-md5.min.js"></script> -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/spark-md5/3.0.2/spark-md5.js"></script>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const md5Result = document.getElementById('md5Result');
+        fileInput.addEventListener('change', (event) => {
+            const start = Date.now();
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fileContent = event.target.result;
+                    const md5 = SparkMD5.hash(fileContent);
+                    console.log(md5);
+                    const end = Date.now();
+                    md5Result.textContent = md5;
+                    console.log((end - start)/1000 +'s');
+                };
+                reader.readAsBinaryString(file);
+                // 5aed7387d1161af815233c47ab11bc40
+            }
+
+        });
+    </script>
+</body>
+
+</html>
