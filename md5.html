@@ -6,36 +6,81 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="spark-md5.js"></script>
 </head>
 
 <body>
     <h2>上传文件并计算 MD5</h2>
-    <input type="file" id="fileInput" />
+    <input type="file" id="file" />
+    <button id="test">开始计算</button>
     <p>MD5: <span id="md5Result"></span></p>
 
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.0/spark-md5.min.js"></script> -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/spark-md5/3.0.2/spark-md5.js"></script>
     <script>
-        const fileInput = document.getElementById('fileInput');
+        const input = document.getElementById('file');
         const md5Result = document.getElementById('md5Result');
-        fileInput.addEventListener('change', (event) => {
-            const start = Date.now();
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const fileContent = event.target.result;
-                    const md5 = SparkMD5.hash(fileContent);
-                    console.log(md5);
-                    const end = Date.now();
-                    md5Result.textContent = md5;
-                    console.log((end - start)/1000 +'s');
-                };
-                reader.readAsBinaryString(file);
-                // 5aed7387d1161af815233c47ab11bc40
+        var running = false;
+        document.getElementById('test').addEventListener('click', () => {
+            if (running) {
+                return;
+            }
+            if (!input.files.length) {
+                console.log('<strong>请选择一个文件。</strong><br/>');
+                return;
             }
 
-        });
+            var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
+                file = input.files[0],
+                chunkSize = 2097152,                           // 以2MB的数据块读取
+                chunks = Math.ceil(file.size / chunkSize),
+                currentChunk = 0,
+                spark = new SparkMD5(),
+                time,
+                uniqueId = 'chunk_' + (new Date().getTime()),
+                chunkId = null,
+                fileReader = new FileReader();
+
+            fileReader.onload = function (e) {
+                if (currentChunk === 0) {
+                    console.log('读取区块编号 <strong id="' + uniqueId + '">' + (currentChunk + 1) + '</strong> of <strong>' + chunks + '</strong><br/>', 'info');
+                } else {
+                    if (chunkId === null) {
+                        chunkId = document.getElementById(uniqueId);
+                    }
+
+                    // chunkId.innerHTML = currentChunk + 1;
+                }
+
+                spark.appendBinary(e.target.result);                 // append array buffer
+                currentChunk += 1;
+
+                if (currentChunk < chunks) {
+                    loadNext();
+                } else {
+                    running = false;
+                    console.log('<strong>已完成加载!</strong><br/>', 'success');
+                    console.log('<strong>计算哈希:</strong> ' + spark.end() + '<br/>', 'success'); // compute hash
+                    console.log('<strong>总时间:</strong> ' + (new Date().getTime() - time) + 'ms<br/>', 'success');
+                }
+            };
+
+            fileReader.onerror = function () {
+                running = false;
+                console.log('<strong>哎呀，出了点问题.</strong>', 'error');
+            };
+
+            function loadNext() {
+                var start = currentChunk * chunkSize,
+                    end = start + chunkSize >= file.size ? file.size : start + chunkSize;
+
+                fileReader.readAsBinaryString(blobSlice.call(file, start, end));
+            }
+
+            running = true;
+            console.log('<p></p><strong>开始增量测试 (' + file.name + ')</strong><br/>', 'info');
+            time = new Date().getTime();
+            loadNext();
+        })
     </script>
 </body>
 
