@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/big.js/6.1.1/big.js"
+        type="application/javascript"></script>
+</head>
+
+<body>
+    <script>
+        //   判断数据相等，比较值的大小
+        // const number1 = new Big(.3)
+        // const number2 = Big(.3)
+        // number1.eq(number2)  // true
+        // console.log('🚀🚀🚀🚀🚀 ~ number1.eq(number2):', number1.eq(number2))
+        // number1.eq(.3) // true
+
+        // number1.gt(number2) // false
+        // 加减法运算  使用toString/valueOf/toNumber/toFixed 方法
+        // const number1 = new Big(.3)
+        // const number2 = number1.plus(.1) // 0.4
+        // console.log('🚀🚀🚀🚀🚀 ~ number2:', number2.toString())
+        // const number3 = number1.minus(.1) // 0.2
+        // console.log('🚀🚀🚀🚀🚀 ~ number3:', number3.toFixed(3))
+        // 乘除法运算
+        const number1 = new Big(.3)
+        console.log('🚀🚀🚀🚀🚀 ~ number1:', number1.times(3).toNumber())
+        const number2 = new Big(.8)
+        console.log('🚀🚀🚀🚀🚀 ~ number2:', number2.div(4).toNumber())
+
+    </script>
+</body>
+
+</html>
