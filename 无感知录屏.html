@@ -193,6 +193,7 @@
                 if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
                     canvasFunction();
                     console.log("开始");
+                    alert('开始')
                     recorder.start(10);
                 }
             });
@@ -200,18 +201,21 @@
             // 暂停
             document.querySelector('.pause-btn').addEventListener('click', () => {
                 console.log("暂停");
+                alert("暂停")
                 recorder.pause();
             });
 
             // 继续
             document.querySelector('.resume-btn').addEventListener('click', () => {
                 console.log("继续");
+                alert('继续')
                 recorder.resume();
             });
 
             // 结束
             document.querySelector('.stop-btn').addEventListener('click', () => {
                 console.log("结束录制");
+                alert('结束录制')
                 canvasFunction();
                 setTimeout(() => {
                     console.log("保存");
