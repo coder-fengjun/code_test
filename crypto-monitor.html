@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币实时监控</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .crypto-card {
+            transition: transform 0.2s;
+        }
+        .crypto-card:hover {
+            transform: translateY(-5px);
+        }
+        .price-up {
+            color: #28a745;
+        }
+        .price-down {
+            color: #dc3545;
+        }
+        .alert-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            animation: alertFlash 1s infinite;
+        }
+        .alert-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 80%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        .alert-content.severe {
+            border: 3px solid #dc3545;
+        }
+        .alert-content.moderate {
+            border: 3px solid #ffc107;
+        }
+        .settings-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .settings-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+        }
+        @keyframes alertFlash {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <button class="btn btn-secondary settings-btn" onclick="toggleSettings()">⚙️ 设置</button>
+    <div class="settings-panel d-none" id="settingsPanel">
+        <h5 class="mb-3">价格波动阈值设置</h5>
+        <div id="thresholdSettings"></div>
+    </div>
+    <div class="container py-4">
+        <h1 class="text-center mb-4">加密货币实时监控</h1>
+        <div class="row" id="cryptoCards"></div>
+    </div>
+
+    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+    <script>
+        const cryptoSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'TRUMPUSDT', 'DOGEUSDT'];
+        const priceData = {};
+        const priceHistory = {};
+        cryptoSymbols.forEach(symbol => {
+            priceHistory[symbol] = [];
+        });
+
+        // 邮件配置
+        const EMAIL_CONFIG = {
+            Host: "smtp.elasticemail.com",
+            Username: "fengjun0725@gmail.com",
+            Password: "588C833011E8D862FF1D7719F6778B8EA5EE",
+            To: 'fengjun0725@gmail.com',
+            From: "fengjun0725@gmail.com"
+        };
+
+
+
+        // 创建加密货币卡片
+        function createCryptoCards() {
+            const container = document.getElementById('cryptoCards');
+            cryptoSymbols.forEach(symbol => {
+                const div = document.createElement('div');
+                div.className = 'col-md-4 mb-4';
+                div.innerHTML = `
+                    <div class="card crypto-card">
+                        <div class="card-body">
+                            <h5 class="card-title">${symbol}</h5>
+                            <p class="card-text h3" id="${symbol}-price">--</p>
+                            <p class="card-text" id="${symbol}-change">--</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        const DEFAULT_THRESHOLD = 1;
+        const SEVERE_THRESHOLD = 10;
+        const thresholds = {};
+        cryptoSymbols.forEach(symbol => {
+            thresholds[symbol] = DEFAULT_THRESHOLD;
+        });
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('d-none');
+        }
+
+        function createSettingsPanel() {
+            const container = document.getElementById('thresholdSettings');
+            cryptoSymbols.forEach(symbol => {
+                const div = document.createElement('div');
+                div.className = 'mb-3';
+                div.innerHTML = `
+                    <label class="form-label">${symbol}</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="${symbol}-threshold"
+                            value="${thresholds[symbol]}" min="0.1" step="0.1"
+                            onchange="updateThreshold('${symbol}', this.value)">
+                        <span class="input-group-text">%</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateThreshold(symbol, value) {
+            thresholds[symbol] = parseFloat(value);
+        }
+
+        // 更新警告显示函数
+        // 发送邮件提醒
+        function sendEmailAlert(symbol, price, change) {
+            const absChange = Math.abs(change);
+            const direction = change >= 0 ? '上涨' : '下跌';
+            const subject = `${symbol} 价格${direction}警告`;
+            const body = `
+                ${symbol} 价格在过去15分钟内发生显著${direction}：
+                价格变化：${absChange.toFixed(2)}%
+                当前价格：$${parseFloat(price).toFixed(2)}
+                
+                此邮件由加密货币监控系统自动发送，请勿回复。
+            `;
+
+            Email.send({
+                ...EMAIL_CONFIG,
+                Subject: subject,
+                Body: body
+            }).then(message => {
+                console.log('邮件发送成功：', message);
+            }).catch(error => {
+                console.error('邮件发送失败：', error);
+            });
+        }
+
+        function showPriceAlert(symbol, price, change) {
+            const absChange = Math.abs(change);
+            const severity = absChange >= SEVERE_THRESHOLD ? 'severe' : 'moderate';
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert-fullscreen';
+            alertDiv.innerHTML = `
+                <div class="alert-content ${severity}">
+                    <h2>${symbol} 价格波动警告</h2>
+                    <p class="h4 mb-3">${change >= 0 ? '↗️' : '↙️'} ${absChange.toFixed(2)}%</p>
+                    <p>当前价格: $${parseFloat(price).toFixed(2)}</p>
+                    <button class="btn btn-primary mt-3" onclick="this.parentElement.parentElement.remove()">关闭提示</button>
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+            document.getElementById('alertSound').play();
+
+            // 发送邮件提醒
+            sendEmailAlert(symbol, price, change);
+
+            // 如果浏览器支持，发送桌面通知
+            if (Notification.permission === "granted") {
+                new Notification(`${symbol} 价格波动警告`, {
+                    body: `价格变化: ${change.toFixed(2)}%\n当前价格: $${price}`,
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+
+        // 更新价格显示函数中的阈值判断
+        function updatePrice(symbol, price, priceChange) {
+            const priceElement = document.getElementById(`${symbol}-price`);
+            const changeElement = document.getElementById(`${symbol}-change`);
+            
+            const now = new Date();
+            const timestamp = now.getTime();
+            const fifteenMinutesAgo = timestamp - 15 * 60 * 1000;
+            
+            // 清理超过15分钟的历史数据
+            priceHistory[symbol] = priceHistory[symbol].filter(item => item.time >= fifteenMinutesAgo);
+            
+            // 计算15分钟内的价格变化
+            if (priceHistory[symbol].length > 0) {
+                const oldestPrice = priceHistory[symbol][0].price;
+                const percentChange = ((price - oldestPrice) / oldestPrice) * 100;
+                
+                if (Math.abs(percentChange) >= thresholds[symbol]) {
+                    showPriceAlert(symbol, price, percentChange);
+                }
+            }
+            
+            // 更新当前价格显示
+            if (priceData[symbol]) {
+                const prevPrice = priceData[symbol];
+                priceElement.className = price > prevPrice ? 'price-up' : price < prevPrice ? 'price-down' : '';
+            }
+            
+            priceData[symbol] = price;
+            priceElement.textContent = `$${parseFloat(price).toFixed(2)}`;
+            
+            const change = parseFloat(priceChange).toFixed(2);
+            changeElement.textContent = `${change}%`;
+            changeElement.className = change >= 0 ? 'price-up' : 'price-down';
+
+            // 更新价格历史
+            priceHistory[symbol].push({ time: timestamp, price: price });
+        }
+
+        // 连接 Binance WebSocket
+        function connectWebSocket() {
+            const streams = cryptoSymbols.map(symbol => 
+                `${symbol.toLowerCase()}@ticker`
+            ).join('/');
+            const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`);
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const symbol = data.s;
+                const price = data.c;
+                const priceChange = data.P;
+                updatePrice(symbol, price, priceChange);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket连接已关闭，尝试重新连接...');
+                setTimeout(connectWebSocket, 5000);
+            };
+        }
+
+        // 请求通知权限
+        if (Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+
+        // 初始化
+        createCryptoCards();
+        createSettingsPanel();
+        connectWebSocket();
+    </script>
+</body>
+</html>
